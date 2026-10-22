@@ -52,6 +52,21 @@ resume-tailor/
 `README.md` (this file) is for the source repository only — it isn't needed at runtime and is
 excluded from the packaged `.skill` file.
 
+## How to install
+
+**Option 1: Claude app (claude.ai or desktop)**
+1. Go to the Releases section of this repo and download `resume-tailor.skill`.
+2. In Claude, open Settings, then Capabilities, then Skills.
+3. Upload the downloaded file. (If your screen only accepts a .zip, rename the file's ending from .skill to .zip.)
+4. Start a new chat and say: "Help me tailor my CV to this job posting."
+
+**Option 2: Claude Code**
+1. Download or clone this repo.
+2. Copy the `resume-tailor` folder into `~/.claude/skills/`.
+3. Restart Claude Code and ask it to build or tailor your CV.
+
+**What it needs to build files:** Python 3 with `python-docx`, LibreOffice and poppler-utils. Claude's own environment normally has these.
+
 ## Requirements
 
 `scripts/build.py` needs:

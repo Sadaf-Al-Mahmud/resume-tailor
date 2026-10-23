@@ -533,7 +533,10 @@ def add_entry(doc, entry, is_last_in_doc, tab_pos, date_warnings, mark_strongest
         norm_date, approximated = normalize_date(raw_date)
         if approximated:
             date_warnings.append(f"{entry.get('title','(untitled)')}: {raw_date!r} -> {norm_date!r}")
-        p.add_run("\t" + norm_date)
+        # Two real spaces before the tab: a PDF viewer/extractor that drops the
+        # positional gap of a right-aligned tab would otherwise glue the date
+        # onto the end of the title ("ManagementExpected 2027").
+        p.add_run("  \t" + norm_date)
 
     link = entry.get("link")
     if entry.get("subtitle") or link:
@@ -588,6 +591,37 @@ def add_references_section(doc, refs, heading_style):
             p.add_run(f", {extra}")
 
 
+def standard_bullets(doc):
+    """Use a plain Unicode bullet (U+2022) in the body font for 'List Bullet',
+    instead of the template's Symbol-font private-use glyph."""
+    try:
+        style = doc.styles["List Bullet"]
+        num_id = style.element.pPr.numPr.numId.val
+        numbering = doc.part.numbering_part.element
+        abs_id = None
+        for num in numbering.findall(qn("w:num")):
+            if num.get(qn("w:numId")) == str(num_id):
+                abs_id = num.find(qn("w:abstractNumId")).get(qn("w:val"))
+        for absn in numbering.findall(qn("w:abstractNum")):
+            if absn.get(qn("w:abstractNumId")) == abs_id:
+                lvl = absn.find(qn("w:lvl"))
+                lvl.find(qn("w:lvlText")).set(qn("w:val"), "\u2022")
+                rpr = lvl.find(qn("w:rPr"))
+                if rpr is None:
+                    rpr = OxmlElement("w:rPr")
+                    lvl.append(rpr)
+                for old in rpr.findall(qn("w:rFonts")):
+                    rpr.remove(old)
+                rf = OxmlElement("w:rFonts")
+                for k in ("ascii", "hAnsi", "cs", "eastAsia"):
+                    rf.set(qn("w:" + k), FONT_NAME)
+                rpr.insert(0, rf)
+    except Exception:
+        # Falls back to the template's own bullet (still a real list item);
+        # never fail a build over the bullet glyph.
+        pass
+
+
 def build_docx(content, out_path, body_size, margin, paper):
     doc = Document()
     pw, ph = PAGE_SIZES[paper]
@@ -601,6 +635,7 @@ def build_docx(content, out_path, body_size, margin, paper):
     set_base_font(doc, body_size)
     set_core_properties(doc, content.get("name", ""))
     heading_style = ensure_heading_style(doc)
+    standard_bullets(doc)
 
     name_p = doc.add_paragraph()
     name_p.alignment = WD_ALIGN_PARAGRAPH.CENTER

@@ -35,6 +35,22 @@ regardless of country or industry.
   that keys off document structure — not just bold formatting — still recognizes the section
   breaks.
 
+## Text-extraction details (found by a real copy-paste test)
+
+Pasting a generated PDF into Notepad exposed two issues, both fixed in `build.py` and covered by
+regression checks:
+
+- **Bullets are a plain "•" in the body font.** The template's default bullet is a Symbol-font
+  private-use glyph (U+F0B7), which shows up as a stray odd character in copied text. The bullets
+  are still real list items — only the glyph changed.
+- **Two spaces precede every right-aligned date.** Some PDF viewers copy the gap of a right tab
+  as nothing, gluing the date to the end of the title ("Management" + "Expected 2027"). The real
+  spaces keep them apart. The tab stop still does the alignment.
+
+One known limit: some extractors (for example poppler's default `pdftotext` mode) may still list
+a right-aligned date on its own line. Others (`pdftotext -raw`, `pypdf`) keep it beside the title.
+No layout trick fully removes this without giving up the right-aligned date, so it is accepted.
+
 ## Paper size
 
 There's no single global default. `build.py` infers A4 vs. Letter from `target_country`: a
